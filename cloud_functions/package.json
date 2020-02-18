@@ -1,0 +1,9 @@
+{
+  "name": "csv2sheet",
+  "version": "0.0.42",
+
+  "dependencies": {
+    "googleapis": "^40.0.0",
+    "@google-cloud/storage": "^2.5.0"
+  }
+}
