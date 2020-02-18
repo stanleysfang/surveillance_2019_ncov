@@ -9,6 +9,8 @@ repository="surveillance_2019_ncov"
 code_path=$HOME/${repository}/prod/
 log_path=$HOME/${repository}/log/
 
+export PATH="/home/stanleysfang92/anaconda3/bin:$PATH"
+
 # Pull prod code
 gsutil -m cp -r gs://${gs_bucket}/${repository} $HOME
 

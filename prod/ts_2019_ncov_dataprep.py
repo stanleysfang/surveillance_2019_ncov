@@ -39,6 +39,8 @@ for df, metric in [(confirmed, 'confirmed'), (deaths, 'deaths'), (recovered, 're
     )
     load_job.result()
 
+print("Load job successful!")
+
 #### Dataprep ####
 
 # Query
@@ -96,6 +98,8 @@ job_config.dry_run = False
 query_job = client.query(ts_2019_ncov_query, job_config=job_config)
 query_job.result()
 
+print("Query job successful!")
+
 #### Extract Table ####
 
 # Job Config
@@ -110,3 +114,5 @@ extract_job = client.extract_table(
     job_config=job_config
 )
 extract_job.result()
+
+print("Extract job successful!")
