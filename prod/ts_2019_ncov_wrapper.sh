@@ -10,7 +10,7 @@ code_path=$HOME/${repository}/prod/
 log_path=$HOME/${repository}/log/
 
 # Pull prod code
-gsutil -m cp -r gs://${gs_bucket}/${repository}/prod $HOME/${repository}
+gsutil -m cp -r gs://${gs_bucket}/${repository} $HOME
 
 # Run ts_2019_ncov_dataprep.py
 source activate surveillance_2019_ncov
