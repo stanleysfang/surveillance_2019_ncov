@@ -2,7 +2,9 @@
 
 start_time=$(date)
 
-#### ts_2019_ncov_wrapper ####
+#### Environment ####
+
+project="stanleysfang"
 
 gs_bucket="stanleysfang"
 repository="surveillance_2019_ncov"
@@ -11,12 +13,8 @@ log_path=$HOME/${repository}/log/
 
 export PATH="/home/stanleysfang92/anaconda3/bin:$PATH"
 
-# Pull prod code
-gsutil -m cp -r gs://${gs_bucket}/${repository} $HOME
-
-# Run ts_2019_ncov_dataprep.py
+#### ts_2019_ncov_wrapper ####
 source activate surveillance_2019_ncov
-
 python ${code_path}ts_2019_ncov_dataprep.py 1>${log_path}ts_2019_ncov_dataprep.out 2>&1
 
 #### Run Time ####
