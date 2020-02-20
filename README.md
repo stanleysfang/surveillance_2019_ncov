@@ -4,7 +4,7 @@ The data source is produced by John Hopkins University Center for Systems Scienc
 This repository takes the data collected by JHU CSSE and further processes it to expand the dashboard done by the university. This repository's dashboard includes the addition of:
 - Historical data
 - Map of death count
-- Geographical controls over time series chart
+- Geographical controls over time series charts
 
 **Dashboard:** https://public.tableau.com/profile/stanleysfang#!/vizhome/COVID-2019Surveillance/COVID-2019Surveillance  
 **JHU CSSE Dashboard:** https://arcg.is/0fHmTX
