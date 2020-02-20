@@ -14,7 +14,8 @@ Tableau Public has limited options for connecting to live data, and Google Sprea
 
 <img src="https://github.com/stanleysfang/surveillance_2019_ncov/raw/master/image/pipeline_diagram.png" alt="pipeline_diagram" width="730" height="300">
 
-*Figure-1: The arrows show the flow of data. Compute Engine and Cloud Functions support the transfer of data.*
+*Figure-1: The arrows show the flow of data. Compute Engine and Cloud Functions*  
+*support the transfer of data. Data processing is done in BigQuery.*
 
 ### References
 **Data Source:** https://github.com/CSSEGISandData/COVID-19  
