@@ -8,6 +8,7 @@ project="stanleysfang"
 
 gs_bucket="stanleysfang"
 repository="surveillance_2019_ncov"
+home_path="/home/stanleysfang92/"
 
 instance_name="stanleysfang"
 zone="us-west1-b"
@@ -16,13 +17,13 @@ zone="us-west1-b"
 
 # gcloud compute instances start ${instance_name} --zone ${zone}
 
-command="gsutil -m cp -r gs://${gs_bucket}/${repository} \$HOME/"
+command="sudo gsutil -m cp -r gs://${gs_bucket}/${repository} ${home_path}"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
-# command="bash \$HOME/surveillance_2019_ncov/prod/ts_2019_ncov_master_wrapper.sh 1>\$HOME/surveillance_2019_ncov/log/ts_2019_ncov_master_wrapper.out 2>&1"
+# command="sudo bash ${home_path}${repository}/prod/ts_2019_ncov_master_wrapper.sh 1>${home_path}${repository}/log/ts_2019_ncov_master_wrapper.out 2>&1"
 # gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
-# command="gsutil -m cp -r \$HOME/${repository}/log gs://${gs_bucket}/${repository}/"
+# command="sudo gsutil -m cp -r ${home_path}${repository}/log gs://${gs_bucket}/${repository}/"
 # gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
 # gcloud compute instances stop ${instance_name} --zone ${zone}
