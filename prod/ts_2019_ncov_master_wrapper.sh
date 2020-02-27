@@ -19,6 +19,9 @@ gcloud compute instances start ${instance_name} --zone ${zone}
 command="gsutil -m cp -r gs://${gs_bucket}/${repository} \$HOME/"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
+command="rm \$HOME/${repository}/log/*"
+gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
+
 command="bash \$HOME/${repository}/prod/ts_2019_ncov_wrapper.sh 1>\$HOME/${repository}/log/ts_2019_ncov_wrapper.out 2>&1"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
