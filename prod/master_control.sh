@@ -20,8 +20,11 @@ zone="us-west1-b"
 command="sudo gsutil -m cp -r gs://${gs_bucket}/${repository} ${home_path}"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
-# command="sudo bash ${home_path}${repository}/prod/ts_2019_ncov_master_wrapper.sh 1>${home_path}${repository}/log/ts_2019_ncov_master_wrapper.out 2>&1"
+# command="sudo rm ${home_path}${repository}/log/*"
 # gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
+
+command="sudo bash ${home_path}${repository}/prod/ts_2019_ncov_master_wrapper.sh" # do not have permission to ${home_path} 1>${home_path}${repository}/log/ts_2019_ncov_master_wrapper.out 2>&1
+gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
 # command="sudo gsutil -m cp -r ${home_path}${repository}/log gs://${gs_bucket}/${repository}/"
 # gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
