@@ -8,28 +8,20 @@ project="stanleysfang"
 
 gs_bucket="stanleysfang"
 repository="surveillance_2019_ncov"
-home_path="/home/stanleysfang92/"
+
+code_path="/home/sfang/windows/gitlab/stanleysfang/${repository}/"
 
 instance_name="stanleysfang"
 zone="us-west1-b"
+home_path="/home/stanleysfang92/"
 
-#### master_control ####
+#### push2gcs ####
 
-# gcloud compute instances start ${instance_name} --zone ${zone}
+gsutil -m cp -r ${code_path}prod gs://${gs_bucket}/${repository}/
+gsutil -m cp -r ${code_path}startup gs://${gs_bucket}/${repository}/
 
 command="sudo gsutil -m cp -r gs://${gs_bucket}/${repository} ${home_path}"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
-
-# command="sudo rm ${home_path}${repository}/log/*"
-# gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
-
-command="sudo bash ${home_path}${repository}/prod/ts_2019_ncov_master_wrapper.sh" # do not have permission to ${home_path} 1>${home_path}${repository}/log/ts_2019_ncov_master_wrapper.out 2>&1
-gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
-
-# command="sudo gsutil -m cp -r ${home_path}${repository}/log gs://${gs_bucket}/${repository}/"
-# gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
-
-# gcloud compute instances stop ${instance_name} --zone ${zone}
 
 #### Run Time ####
 end_time=$(date)
