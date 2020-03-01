@@ -16,6 +16,8 @@ zone="us-west1-b"
 
 gcloud compute instances start ${instance_name} --zone ${zone}
 
+sleep 30
+
 command="gsutil -m cp -r gs://${gs_bucket}/${repository} \$HOME/"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
