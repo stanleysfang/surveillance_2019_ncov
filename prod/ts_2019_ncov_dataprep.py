@@ -73,7 +73,8 @@ SELECT
     confirmed, deaths, recovered,
     IFNULL(confirmed_new, confirmed) AS confirmed_new,
     IFNULL(deaths_new, deaths) AS deaths_new,
-    IFNULL(recovered_new, recovered) AS recovered_new
+    IFNULL(recovered_new, recovered) AS recovered_new,
+    TIMESTAMP(REGEXP_REPLACE(STRING(CURRENT_TIMESTAMP, "America/Los_Angeles"), r'[\+-][0-9]{2}$', '')) AS last_updated_ts
 FROM (
     SELECT
         dt, province_state, country_region, latitude, longitude,
