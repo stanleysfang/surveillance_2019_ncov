@@ -1,5 +1,6 @@
 
 from google.cloud import bigquery
+from BigQueryWrapper import QueryRunner, Loader, Extractor
 import pandas as pd
 import datetime
 import re
@@ -7,8 +8,13 @@ import re
 project_id = 'stanleysfang'
 client = bigquery.Client(project=project_id)
 
-#### Load Data ####
+qr = QueryRunner(client=client)
+loader = Loader(client=client)
+extractor = Extractor(client=client)
 
+max_results = 20
+
+#### Load Data ####
 confirmed = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
 deaths = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
 recovered = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
@@ -19,46 +25,41 @@ confirmed.columns = ['province_state', 'country_region', 'latitude', 'longitude'
 deaths.columns = ['province_state', 'country_region', 'latitude', 'longitude'] + dt_cols
 recovered.columns = ['province_state', 'country_region', 'latitude', 'longitude'] + dt_cols
 
-# Job Config
-job_config = bigquery.LoadJobConfig()
+schema = [
+    ('province_state', 'STRING'),
+    ('country_region', 'STRING'),
+    ('latitude', 'FLOAT64'),
+    ('longitude', 'FLOAT64')    
+] + [(dt_col, 'INT64') for dt_col in dt_cols]
 
-job_config.write_disposition = 'WRITE_TRUNCATE'
-job_config.schema = [
-    bigquery.SchemaField('province_state', 'STRING'),
-    bigquery.SchemaField('country_region', 'STRING'),
-    bigquery.SchemaField('latitude', 'FLOAT64'),
-    bigquery.SchemaField('longitude', 'FLOAT64')    
-] + [bigquery.SchemaField(dt_col, 'INT64') for dt_col in dt_cols]
-
-# Load Job
 for df, metric in [(confirmed, 'confirmed'), (deaths, 'deaths'), (recovered, 'recovered')]:
-    load_job = client.load_table_from_dataframe(
-        df,
-        destination='stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{metric}_raw'.format(metric=metric),
-        job_config=job_config
-    )
+    load_job = loader.load_df(df, 'stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{metric}_raw'.format(metric=metric), schema=schema)
     load_job.result()
-
-print("Load job successful!")
+    
+    bq_table = client.get_table(load_job.destination)
+    df = client.list_rows(bq_table, max_results=max_results).to_dataframe()
+    
+    print(bq_table.full_table_id)
+    print(df.head(max_results))
 
 #### Dataprep ####
-
-# Query
 ts_2019_ncov_temp_query = ''
-
 for dt_col in dt_cols:
     ts_2019_ncov_temp_query = \
     """{ts_2019_ncov_temp_query}
     SELECT
         PARSE_DATE('dt_%Y%m%d', '{dt_col}') AS dt,
-        a.province_state, a.country_region, a.latitude, a.longitude,
-        a.{dt_col} AS confirmed,
-        b.{dt_col} AS deaths,
-        c.{dt_col} AS recovered,
+        COALESCE(a.province_state, b.province_state, c.province_state) AS province_state,
+        COALESCE(a.country_region, b.country_region, c.country_region) AS country_region,
+        COALESCE(a.latitude, b.latitude, c.latitude) AS latitude,
+        COALESCE(a.longitude, b.longitude, c.longitude) AS longitude,
+        IFNULL(a.{dt_col}, 0) AS confirmed,
+        IFNULL(b.{dt_col}, 0) AS deaths,
+        IFNULL(c.{dt_col}, 0) AS recovered,
     FROM `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_confirmed_raw` a
-    LEFT JOIN `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_deaths_raw` b
+    FULL JOIN `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_deaths_raw` b
     ON IFNULL(a.province_state, '') = IFNULL(b.province_state, '') AND a.country_region = b.country_region
-    LEFT JOIN `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_recovered_raw` c
+    FULL JOIN `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_recovered_raw` c
     ON IFNULL(a.province_state, '') = IFNULL(c.province_state, '') AND a.country_region = c.country_region
     
     UNION ALL
@@ -86,34 +87,15 @@ FROM (
 )
 """.format(ts_2019_ncov_temp_query=ts_2019_ncov_temp_query)
 
-# Job Config
-job_config = bigquery.QueryJobConfig()
-
-job_config.use_legacy_sql = False
-job_config.destination = 'stanleysfang.surveillance_2019_ncov.ts_2019_ncov'
-job_config.write_disposition = 'WRITE_TRUNCATE'
-job_config.time_partitioning = bigquery.table.TimePartitioning(field='dt')
-job_config.dry_run = False
-
-# Query Job
-query_job = client.query(ts_2019_ncov_query, job_config=job_config)
+query_job = qr.run_query(ts_2019_ncov_query, destination_table='stanleysfang.surveillance_2019_ncov.ts_2019_ncov', time_partitioning=True, partition_field='dt')
 query_job.result()
 
-print("Query job successful!")
+bq_table = client.get_table(query_job.destination)
+df = client.list_rows(bq_table, max_results=max_results).to_dataframe()
+
+print(bq_table.full_table_id)
+print(df.head(max_results))
 
 #### Extract Table ####
-
-# Job Config
-job_config = bigquery.ExtractJobConfig()
-
-job_config.destination_format = 'CSV'
-
-# Extract Job
-extract_job = client.extract_table(
-    'stanleysfang.surveillance_2019_ncov.ts_2019_ncov',
-    'gs://surveillance_2019_ncov/ts_2019_ncov.csv',
-    job_config=job_config
-)
+extract_job = extractor.extract('stanleysfang.surveillance_2019_ncov.ts_2019_ncov', 'gs://surveillance_2019_ncov/ts_2019_ncov.csv')
 extract_job.result()
-
-print("Extract job successful!")

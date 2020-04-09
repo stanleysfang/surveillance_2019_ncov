@@ -7,9 +7,9 @@ start_time=$(date)
 project="stanleysfang"
 
 gs_bucket="stanleysfang"
-repository="surveillance_2019_ncov"
-code_path=$HOME/${repository}/prod/
-log_path=$HOME/${repository}/log/
+repo="surveillance_2019_ncov"
+code_path=$HOME/${repo}/prod/
+log_path=$HOME/${repo}/log/
 
 export PATH="/home/stanleysfang92/anaconda3/bin:$PATH"
 

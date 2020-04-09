@@ -4,10 +4,10 @@ start_time=$(date)
 
 #### Environment ####
 
-project="stanleysfang"
+project_id="stanleysfang"
 
 gs_bucket="stanleysfang"
-repository="surveillance_2019_ncov"
+repo="surveillance_2019_ncov"
 
 instance_name="worker-1"
 zone="us-west1-b"
@@ -18,16 +18,16 @@ gcloud compute instances start ${instance_name} --zone ${zone}
 
 sleep 30
 
-command="gsutil -m cp -r gs://${gs_bucket}/${repository} \$HOME/"
+command="gsutil -m cp -r gs://${gs_bucket}/${repo} \$HOME/"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
-command="rm \$HOME/${repository}/log/*"
+command="rm \$HOME/${repo}/log/*"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
-command="bash \$HOME/${repository}/prod/ts_2019_ncov_wrapper.sh 1>\$HOME/${repository}/log/ts_2019_ncov_wrapper.out 2>&1"
+command="bash \$HOME/${repo}/prod/ts_2019_ncov_wrapper.sh 1>\$HOME/${repo}/log/ts_2019_ncov_wrapper.out 2>&1"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
-command="gsutil -m cp -r \$HOME/${repository}/log gs://${gs_bucket}/${repository}/"
+command="gsutil -m cp -r \$HOME/${repo}/log gs://${gs_bucket}/${repo}/"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
 gcloud compute instances stop ${instance_name} --zone ${zone}
