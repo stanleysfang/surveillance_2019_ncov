@@ -5,7 +5,8 @@ import pandas as pd
 import datetime
 import re
 
-pd.set_option('display.width', 200)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 500)
 
 project_id = 'stanleysfang'
 client = bigquery.Client(project=project_id)

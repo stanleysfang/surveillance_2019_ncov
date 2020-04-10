@@ -18,7 +18,7 @@ gcloud compute instances start ${instance_name} --zone ${zone}
 
 sleep 30
 
-command="gsutil -m cp -r gs://${gs_bucket}/${repo} \$HOME/"
+command="gsutil -m rsync -dr gs://${gs_bucket}/${repo} \$HOME/${repo}"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
 command="rm \$HOME/${repo}/log/*"
@@ -27,7 +27,7 @@ gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 command="bash \$HOME/${repo}/prod/ts_2019_ncov_wrapper.sh 1>\$HOME/${repo}/log/ts_2019_ncov_wrapper.out 2>&1"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
-command="gsutil -m cp -r \$HOME/${repo}/log gs://${gs_bucket}/${repo}/"
+command="gsutil -m rsync -dr \$HOME/${repo}/log gs://${gs_bucket}/${repo}/log"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
 gcloud compute instances stop ${instance_name} --zone ${zone}

@@ -17,10 +17,10 @@ home_path="/home/stanleysfang92/" # need this home_path because $HOME can be a d
 
 #### push2gcs ####
 
-gsutil -m cp -r ${code_path}prod gs://${gs_bucket}/${repo}/
-gsutil -m cp -r ${code_path}startup gs://${gs_bucket}/${repo}/
+gsutil -m rsync -dr -x "__pycache__" ${code_path}prod gs://${gs_bucket}/${repo}/prod
+gsutil -m rsync -dr ${code_path}startup gs://${gs_bucket}/${repo}/startup
 
-command="sudo gsutil -m cp -r gs://${gs_bucket}/${repo} ${home_path}"
+command="sudo gsutil -m rsync -dr gs://${gs_bucket}/${repo} ${home_path}${repo}"
 gcloud compute ssh ${instance_name} --zone ${zone} --command "${command}"
 
 command="sudo chmod 755 ${home_path}${repo}/prod/*"
