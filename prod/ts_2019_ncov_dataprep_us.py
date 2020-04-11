@@ -73,7 +73,8 @@ for dt_col in dt_cols:
         COALESCE(a.latitude, b.latitude) AS latitude,
         COALESCE(a.longitude, b.longitude) AS longitude,
         IFNULL(a.{dt_col}, 0) AS confirmed,
-        IFNULL(b.{dt_col}, 0) AS deaths
+        IFNULL(b.{dt_col}, 0) AS deaths,
+        0 AS recovered
     FROM `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}_confirmed_raw` a
     FULL JOIN `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}_deaths_raw` b
     ON a.combined_key = b.combined_key
@@ -86,17 +87,24 @@ ts_2019_ncov_temp_query = re.sub('[(UNION ALL)\n ]*$', '\n', ts_2019_ncov_temp_q
 ts_2019_ncov_query = \
 """
 SELECT
-    dt, city, province_state, country_region, latitude, longitude,
-    confirmed, deaths,
+    dt, province_state, country_region, latitude, longitude,
+    confirmed, deaths, recovered,
     IFNULL(confirmed_new, confirmed) AS confirmed_new,
     IFNULL(deaths_new, deaths) AS deaths_new,
+    recovered_new,
     TIMESTAMP(REGEXP_REPLACE(STRING(CURRENT_TIMESTAMP, "America/Los_Angeles"), r'[\+-][0-9]{{2}}$', '')) AS last_updated_ts
 FROM (
     SELECT
-        dt, city, province_state, country_region, latitude, longitude,
-        confirmed, deaths,
+        dt,
+        CASE
+            WHEN city IS NULL OR city = 'Unassigned' THEN province_state
+            ELSE CONCAT(city, ", ", province_state)
+            END AS province_state,
+        country_region, latitude, longitude,
+        confirmed, deaths, recovered,
         confirmed - LAG(confirmed) OVER(PARTITION BY combined_key ORDER BY dt) AS confirmed_new,
-        deaths - LAG(deaths) OVER(PARTITION BY combined_key ORDER BY dt) AS deaths_new
+        deaths - LAG(deaths) OVER(PARTITION BY combined_key ORDER BY dt) AS deaths_new,
+        0 AS recovered_new
     FROM ({ts_2019_ncov_temp_query})
 )
 """.format(ts_2019_ncov_temp_query=ts_2019_ncov_temp_query)
@@ -111,5 +119,19 @@ print(bq_table.full_table_id)
 print(df.head(max_results))
 
 #### Extract Table ####
-extract_job = extractor.extract('stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}'.format(geo=geo), 'gs://surveillance_2019_ncov/ts_2019_ncov_{geo}.csv'.format(geo=geo))
-extract_job.result()
+for dt_col in dt_cols[-7:]: #  only refresh the last 7 days
+    dt = datetime.datetime.strptime(dt_col, 'dt_%Y%m%d').strftime('%Y-%m-%d')
+    print(dt)
+    
+    daily_ts_2019_ncov_query = \
+    """
+    SELECT *
+    FROM `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}`
+    WHERE dt = "{dt}"
+    """.format(geo=geo, dt=dt)
+    
+    query_job = qr.run_query(daily_ts_2019_ncov_query)
+    query_job.result()
+    
+    extract_job = extractor.extract(query_job.destination, 'gs://surveillance_2019_ncov/ts_2019_ncov_{geo}_{dt}.csv'.format(geo=geo, dt=re.sub('-', '', dt)))
+    extract_job.result()

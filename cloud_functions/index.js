@@ -72,7 +72,7 @@ function addEmptySheet(sheetsAPI, sheetName) {
                 index: 1,
                 gridProperties: {
                   rowCount: 50000,
-                  columnCount: 26,
+                  columnCount: 12,
                   frozenRowCount: 1
                 }
               }
