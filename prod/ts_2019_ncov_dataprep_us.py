@@ -31,7 +31,7 @@ confirmed.columns = cols
 cols.insert(11, 'population')
 deaths.columns = cols
 
-schema = [
+confirmed_schema = [
     ('UID', 'INT64'),
     ('iso2', 'STRING'),
     ('iso3', 'STRING'),
