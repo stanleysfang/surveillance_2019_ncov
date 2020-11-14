@@ -62,27 +62,22 @@ deaths_schema.insert(11, ('population', 'INT64'))
 deaths_load_job = loader.load_df(deaths, 'stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}_deaths_raw'.format(geo=geo), schema=deaths_schema)
 
 for job in loader.job_history:
-    job.result()
-    
-    bq_table = client.get_table(job.destination)
-    df = client.list_rows(bq_table, max_results=max_results).to_dataframe()
-    
-    print(bq_table.full_table_id)
-    print(df.head(max_results))
+    print_job_result(job, client)
 
 #### Dataprep ####
+# restructure raw data
 for metric in ['confirmed', 'deaths']:
     array_query = ''
     for dt_col in dt_cols:
         array_query = \
         """{array_query}
-        STRUCT(PARSE_DATE('dt_%Y%m%d', '{dt_col}') AS dt, {dt_col} AS {metric}),
+        STRUCT(PARSE_DATE('dt_%Y%m%d', '{dt_col}') AS dt, {dt_col} AS total_{metric}),
         """.format(array_query=array_query, dt_col=dt_col, metric=metric)
     array_query = re.sub('[,\n ]*$', '\n', array_query)
     
     query = \
     """
-    SELECT dt, a.* EXCEPT(arr), {metric}
+    SELECT dt, a.* EXCEPT(arr), total_{metric}
     FROM (
         SELECT
             county, province_state, country_region, combined_key, latitude, longitude,
@@ -92,38 +87,35 @@ for metric in ['confirmed', 'deaths']:
     """.format(metric=metric, array_query=array_query, geo=geo)
     
     query_job = qr.run_query(query, destination_table='stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}_{metric}'.format(geo=geo, metric=metric), time_partitioning=True, partition_field='dt')
-    query_job.result()
-    
-    bq_table = client.get_table(query_job.destination)
-    df = client.list_rows(bq_table, max_results=max_results).to_dataframe()
-    
-    print(bq_table.full_table_id)
-    print(df.head(max_results))
 
+for job in qr.job_history:
+    print_job_result(job, client)
+
+# agg data
 ts_2019_ncov_query = \
 """
 SELECT
     dt, county, province_state, country_region, combined_key, latitude, longitude,
     population,
-    confirmed, deaths, confirmed_new, deaths_new,
-    ROUND(AVG(confirmed_new) OVER(PARTITION BY combined_key ORDER BY dt ROWS BETWEEN 6 PRECEDING AND CURRENT ROW), 1) AS confirmed_new_7d_ma,
-    ROUND(AVG(deaths_new) OVER(PARTITION BY combined_key ORDER BY dt ROWS BETWEEN 6 PRECEDING AND CURRENT ROW), 1) AS deaths_new_7d_ma,
-    ROUND(AVG(confirmed_new) OVER(PARTITION BY combined_key ORDER BY dt ROWS BETWEEN 27 PRECEDING AND CURRENT ROW), 1) AS confirmed_new_28d_ma,
-    ROUND(AVG(deaths_new) OVER(PARTITION BY combined_key ORDER BY dt ROWS BETWEEN 27 PRECEDING AND CURRENT ROW), 1) AS deaths_new_28d_ma,
-    IF(population = 0, NULL, ROUND(confirmed/population, 4)) AS incident_rate,
-    IF(confirmed = 0, NULL, ROUND(deaths/confirmed, 4)) AS case_fatality_rate,
+    total_confirmed, total_deaths, daily_new_confirmed, daily_new_deaths,
+    ROUND(AVG(daily_new_confirmed) OVER(PARTITION BY combined_key ORDER BY dt ROWS BETWEEN 6 PRECEDING AND CURRENT ROW), 1) AS daily_new_confirmed_7d_ma,
+    ROUND(AVG(daily_new_deaths) OVER(PARTITION BY combined_key ORDER BY dt ROWS BETWEEN 6 PRECEDING AND CURRENT ROW), 1) AS daily_new_deaths_7d_ma,
+    ROUND(AVG(daily_new_confirmed) OVER(PARTITION BY combined_key ORDER BY dt ROWS BETWEEN 27 PRECEDING AND CURRENT ROW), 1) AS daily_new_confirmed_28d_ma,
+    ROUND(AVG(daily_new_deaths) OVER(PARTITION BY combined_key ORDER BY dt ROWS BETWEEN 27 PRECEDING AND CURRENT ROW), 1) AS daily_new_deaths_28d_ma,
+    IF(population = 0, NULL, ROUND(total_confirmed/population, 4)) AS incident_rate,
+    IF(total_confirmed = 0, NULL, ROUND(total_deaths/total_confirmed, 4)) AS case_fatality_rate,
     MAX(dt) OVER() AS last_update_dt,
-    TIMESTAMP(REGEXP_REPLACE(STRING(CURRENT_TIMESTAMP, "America/Los_Angeles"), r'[\+-][0-9]{2}$', '')) AS last_updated_ts
+    TIMESTAMP(REGEXP_REPLACE(STRING(CURRENT_TIMESTAMP, "America/Los_Angeles"), r'[\+-][0-9]{{2}}$', '')) AS last_updated_ts -- need the double bracket to avoid error with str.format
 FROM (
     SELECT
-        * EXCEPT(confirmed_new, deaths_new),
-        IFNULL(confirmed_new, confirmed) AS confirmed_new,
-        IFNULL(deaths_new, deaths) AS deaths_new
+        * EXCEPT(daily_new_confirmed, daily_new_deaths),
+        IFNULL(daily_new_confirmed, total_confirmed) AS daily_new_confirmed,
+        IFNULL(daily_new_deaths, total_deaths) AS daily_new_deaths
     FROM (
         SELECT
             *,
-            confirmed - LAG(confirmed) OVER(PARTITION BY combined_key ORDER BY dt) AS confirmed_new,
-            deaths - LAG(deaths) OVER(PARTITION BY combined_key ORDER BY dt) AS deaths_new
+            total_confirmed - LAG(total_confirmed) OVER(PARTITION BY combined_key ORDER BY dt) AS daily_new_confirmed,
+            total_deaths - LAG(total_deaths) OVER(PARTITION BY combined_key ORDER BY dt) AS daily_new_deaths
         FROM (
             SELECT
                 a.*, b.population
@@ -136,8 +128,8 @@ FROM (
                     COALESCE(a.combined_key, b.combined_key) AS combined_key,
                     COALESCE(a.latitude, b.latitude) AS latitude,
                     COALESCE(a.longitude, b.longitude) AS longitude,
-                    IFNULL(a.confirmed, 0) AS confirmed,
-                    IFNULL(b.deaths, 0) AS deaths
+                    IFNULL(a.total_confirmed, 0) AS total_confirmed,
+                    IFNULL(b.total_deaths, 0) AS total_deaths
                 FROM `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}_confirmed` a
                 FULL JOIN `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}_deaths` b
                 ON a.dt = b.dt AND a.combined_key = b.combined_key
@@ -150,20 +142,20 @@ FROM (
 """.format(geo=geo)
 
 query_job = qr.run_query(ts_2019_ncov_query, destination_table='stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}'.format(geo=geo), time_partitioning=True, partition_field='dt')
-query_job.result()
 
-bq_table = client.get_table(query_job.destination)
-df = client.list_rows(bq_table, max_results=max_results).to_dataframe()
+print_job_result(query_job, client)
 
-print(bq_table.full_table_id)
-print(df.head(max_results))
-
+# US current table
 us_cur_query = \
 """
 SELECT *
 FROM `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}`
 WHERE dt = last_update_dt
 """.format(geo=geo)
+
+query_job = qr.run_query(us_cur_query, destination_table='stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}_cur'.format(geo=geo))
+
+print_job_result(query_job, client)
 
 #### Extract Table ####
 for dt_col in dt_cols[-7:]: #  only refresh the last 14 days
