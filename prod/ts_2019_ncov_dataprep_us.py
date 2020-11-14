@@ -158,19 +158,5 @@ query_job = qr.run_query(us_cur_query, destination_table='stanleysfang.surveilla
 print_job_result(query_job, client)
 
 #### Extract Table ####
-for dt_col in dt_cols[-7:]: #  only refresh the last 14 days
-    dt = datetime.datetime.strptime(dt_col, 'dt_%Y%m%d').strftime('%Y-%m-%d')
-    print(dt)
-    
-    daily_ts_2019_ncov_query = \
-    """
-    SELECT *
-    FROM `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}`
-    WHERE dt = "{dt}"
-    """.format(geo=geo, dt=dt)
-    
-    query_job = qr.run_query(daily_ts_2019_ncov_query)
-    query_job.result()
-    
-    extract_job = extractor.extract(query_job.destination, 'gs://surveillance_2019_ncov/ts_2019_ncov_{geo}_{dt}.csv'.format(geo=geo, dt=re.sub('-', '', dt)))
-    extract_job.result()
+extract_job = extractor.extract(query_job.destination, 'gs://surveillance_2019_ncov/ts_2019_ncov_{geo}_cur.csv'.format(geo=geo))
+extract_job.result()
