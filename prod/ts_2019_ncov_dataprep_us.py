@@ -49,9 +49,9 @@ confirmed_schema = [
     ('combined_key', 'STRING'),
 ] + [(dt_col, 'INT64') for dt_col in dt_cols]
 
-confirmed_load_job = loader.load_df(confirmed, 'stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}_confirmed_raw'.format(geo=geo), schema=confirmed_schema)
+loader.load_df(confirmed, 'stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}_confirmed_raw'.format(geo=geo), schema=confirmed_schema)
 
-#deaths
+# deaths
 deaths_cols = confirmed_cols
 deaths_cols.insert(11, 'population')
 deaths.columns = deaths_cols
@@ -59,7 +59,7 @@ deaths.columns = deaths_cols
 deaths_schema = confirmed_schema
 deaths_schema.insert(11, ('population', 'INT64'))
 
-deaths_load_job = loader.load_df(deaths, 'stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}_deaths_raw'.format(geo=geo), schema=deaths_schema)
+loader.load_df(deaths, 'stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}_deaths_raw'.format(geo=geo), schema=deaths_schema)
 
 for job in loader.job_history:
     print_job_result(job, client)
