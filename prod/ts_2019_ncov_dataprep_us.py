@@ -40,7 +40,7 @@ confirmed_schema = [
     ('iso2', 'STRING'),
     ('iso3', 'STRING'),
     ('code3', 'INT64'),
-    ('FIPS', 'FLOAT64'),
+    ('FIPS', 'INT64'),
     ('county', 'STRING'),
     ('province_state', 'STRING'),
     ('country_region', 'STRING'),
