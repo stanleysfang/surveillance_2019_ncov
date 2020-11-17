@@ -4,7 +4,7 @@ The data source is produced by John Hopkins University Center for Systems Scienc
 This repository takes the data collected by JHU CSSE and further processes it to supplement the dashboard done by the university. It adds:
 - Searchable US county level stats in tabular form
 
-**Dashboard:** https://public.tableau.com/profile/stanleysfang#!/vizhome/COVID-2019Surveillance/COVID-2019Surveillance  
+**Dashboard:** https://public.tableau.com/profile/stanleysfang#!/vizhome/COVID-2019Surveillance/CurrentUSReport-CountyLevel  
 **JHU CSSE Dashboard:** https://arcg.is/0fHmTX
 
 ### Data Pipeline
