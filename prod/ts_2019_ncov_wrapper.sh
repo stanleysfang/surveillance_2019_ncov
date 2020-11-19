@@ -15,6 +15,8 @@ export PATH="/home/stanleysfang92/anaconda3/bin:$PATH"
 
 #### ts_2019_ncov_wrapper ####
 source activate surveillance_2019_ncov
+
+python ${code_path}csse_covid_19_daily_reports.py 1>${log_path}csse_covid_19_daily_reports.out 2>&1
 python ${code_path}ts_2019_ncov_dataprep_us.py 1>${log_path}ts_2019_ncov_dataprep_us.out 2>&1 &
 # python ${code_path}ts_2019_ncov_dataprep_global.py 1>${log_path}ts_2019_ncov_dataprep_global.out 2>&1 &
 
