@@ -9,7 +9,7 @@ client = bigquery.Client(project=project_id)
 daily_reports = CSSECovid19DailyReports(client)
 
 #### Load Data ####
-cur = datetime.datetime.today()
-d = datetime.datetime(cur.year, cur.month, cur.day-1)
+yesterday = datetime.date.today() - datetime.timedelta(days=1)
 
-daily_reports.update_us(d)
+daily_reports.update_us(yesterday)
+daily_reports.update_global(yesterday)
