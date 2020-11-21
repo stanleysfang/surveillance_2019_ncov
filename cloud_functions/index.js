@@ -25,6 +25,7 @@ exports.csv2sheet = async (data, context) => {
   
   // get sheet or create a new sheet and remember its ID (based on the filename, removing the .csv extension)
   const sheetId = await getSheetId(sheetsAPI, sheetName);
+  await clearSheet(sheetsAPI, sheetName);
   const theData = await readCSVContent(sheetsAPI, data, sheetName);
   await populateAndStyle(sheetsAPI, theData, sheetId);
 };
@@ -102,7 +103,7 @@ function addEmptySheet(sheetsAPI, sheetName) {
 function readCSVContent(sheetsAPI, file, sheetName) {
   return new Promise((resolve, reject) => {
     const storage = new Storage();
-    let fileContents = new Buffer('');
+    let fileContents = new Buffer.alloc(0);
     storage.bucket(file.bucket).file(file.name).createReadStream()
     .on('error', function(err) {
       reject('Storage API returned an error: ' + err);
@@ -114,6 +115,25 @@ function readCSVContent(sheetsAPI, file, sheetName) {
       let content = fileContents.toString('utf8');
       console.log("CSV content read as string: " + content );
       resolve(content);
+    });
+  });
+}
+
+function clearSheet(sheetsAPI, sheetName) {
+  return new Promise((resolve, reject) => {
+    // Clear sheet
+    const clearSheetParams = {
+        spreadsheetId: process.env.SPREADSHEET_ID,
+        range: sheetName
+    };
+    
+    sheetsAPI.spreadsheets.values.clear(clearSheetParams, function(err, response) {
+      if (err) {
+        reject("Sheets API returned an error while clearing " + sheetName + ": " + err);
+      } else {
+        console.log("clearedRange: " + response.data.clearedRange);
+        resolve();
+      }
     });
   });
 }
