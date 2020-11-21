@@ -17,4 +17,4 @@ Tableau Public has limited options for connecting to live data, and Google Sprea
 
 ### References
 **Data Source:** https://github.com/CSSEGISandData/COVID-19  
-**Information on Coronavirus COVID-2019:** https://www.who.int/emergencies/diseases/novel-coronavirus-2019
+**Information on COVID-2019:** https://www.who.int/emergencies/diseases/novel-coronavirus-2019
