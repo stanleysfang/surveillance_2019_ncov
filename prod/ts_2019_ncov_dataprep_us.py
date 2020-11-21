@@ -104,7 +104,7 @@ SELECT
     ROUND(AVG(daily_new_deaths) OVER(PARTITION BY combined_key ORDER BY dt ROWS BETWEEN 27 PRECEDING AND CURRENT ROW), 1) AS daily_new_deaths_28d_ma,
     IF(population = 0, NULL, ROUND(total_confirmed/population, 4)) AS incident_rate,
     IF(total_confirmed = 0, NULL, ROUND(total_deaths/total_confirmed, 4)) AS case_fatality_rate,
-    MAX(dt) OVER() AS last_update_dt,
+    MAX(dt) OVER() AS last_updated_dt,
     TIMESTAMP(REGEXP_REPLACE(STRING(CURRENT_TIMESTAMP, "America/Los_Angeles"), r'[\+-][0-9]{{2}}$', '')) AS last_updated_ts -- need the double bracket to avoid error with str.format
 FROM (
     SELECT
@@ -150,7 +150,7 @@ us_cur_query = \
 """
 SELECT *
 FROM `stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}`
-WHERE dt = last_update_dt
+WHERE dt = last_updated_dt
 """.format(geo=geo)
 
 query_job = qr.run_query(us_cur_query, destination_table='stanleysfang.surveillance_2019_ncov.ts_2019_ncov_{geo}_cur'.format(geo=geo))

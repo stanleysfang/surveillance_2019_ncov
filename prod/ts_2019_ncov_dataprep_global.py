@@ -101,7 +101,7 @@ SELECT
     ROUND(AVG(daily_new_recovered) OVER(PARTITION BY province_state, country_region ORDER BY dt ROWS BETWEEN 27 PRECEDING AND CURRENT ROW), 1) AS daily_new_recovered_28d_ma,
     IF(population = 0, NULL, ROUND(total_confirmed/population, 4)) AS incident_rate,
     IF(total_confirmed = 0, NULL, ROUND(total_deaths/total_confirmed, 4)) AS case_fatality_rate,
-    MAX(dt) OVER() AS last_update_dt,
+    MAX(dt) OVER() AS last_updated_dt,
     TIMESTAMP(REGEXP_REPLACE(STRING(CURRENT_TIMESTAMP, "America/Los_Angeles"), r'[\+-][0-9]{{2}}$', '')) AS last_updated_ts -- need the double bracket to avoid error with str.format
 FROM (
     SELECT
