@@ -21,7 +21,7 @@ class CSSECovid19DailyReports:
         self.col_mapping_us = {
             'UID': ('UID', 'float64'),
             'FIPS': ('FIPS', 'float64'), # Federal Information Processing Standards code that uniquely identifies counties within the US
-            'ISO3': ('ISO3', 'object'),
+            'ISO3': ('iso3', 'object'),
             'Province_State': ('province_state', 'object'),
             'Country_Region': ('country_region', 'object'),
             'Lat': ('latitude', 'float64'),
@@ -43,7 +43,7 @@ class CSSECovid19DailyReports:
         self.col_order_us = [
             'UID',
             'FIPS',
-            'ISO3',
+            'iso3',
             'province_state',
             'country_region',
             'latitude',
@@ -63,7 +63,7 @@ class CSSECovid19DailyReports:
         self.schema_us = [
             ('UID', 'INT64'),
             ('FIPS', 'INT64'),
-            ('ISO3', 'STRING'),
+            ('iso3', 'STRING'),
             ('province_state', 'STRING'),
             ('country_region', 'STRING'),
             ('latitude', 'FLOAT64'),
